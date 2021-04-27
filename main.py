@@ -130,7 +130,7 @@ class Cooker:
         logging.debug(f'Read chamber value of: {self.chamber_thermistor.reading().fahrenheit()}')
         return self.chamber_thermistor.reading()
     
-    # returns a collection of readings the food probes
+    # returns a list of readings from the food probes
     def read_food(self):
         return [t.reading() for t in self.food_thermistors]
 
@@ -151,7 +151,7 @@ class Cooker:
             self.COOKER_PIN.value = False
             self.is_cooker_on = False
     
-    # expected to be called at an interval in a loop
+    # expected to be called at an interval in a loop to maintain cooker temperature
     def update_cooker(self):
         chamber_temperature = self.read_chamber()
         # if the chamber temperature is over target by tolerance amount, turn off the cooker
