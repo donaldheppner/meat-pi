@@ -91,19 +91,28 @@ class Thermistor:
             self.c = 0.0000000951568577
 
     def calculate_reading(self, adc):
-        # https://learn.adafruit.com/thermistor/using-a-thermistor
-        resistance = self.resistor / ((65535 / adc) - 1)
-        lnResistance = math.log1p(resistance)
-        kelvins = 1 / (self.a + (self.b * lnResistance) +
-                       (self.c * (lnResistance ** 3)))
-
-        return ThermistorReading(self, adc, resistance, kelvins)
+        if(adc > 0):
+            # https://learn.adafruit.com/thermistor/using-a-thermistor
+            resistance = self.resistor / ((65535 / adc) - 1)
+            lnResistance = math.log1p(resistance)
+            kelvins = 1 / (self.a + (self.b * lnResistance) +
+                        (self.c * (lnResistance ** 3)))
+            return ThermistorReading(self, adc, resistance, kelvins)
+        else:
+            return ThermistorReading(self, 0, 0, 0)
     
     def reading(self):
         return self.calculate_reading(self.thermistor.value)
 
 
 class Cooker:
+    is_cooker_on = False
+    last_cooker_on_time = 0
+
+    COOKER_ON_DELAY = 120   # don't turn the cooker on if it was last turned less than X seconds ago
+    COOKER_PIN = digitalio.DigitalInOut(board.D18)
+    COOKER_PIN.direction = digitalio.Direction.OUTPUT
+
     # A Cooker is defined as:
     # - 1 chamber probe and (up to) 3 food probes
     # - A target temperature for the chamber with a tolerance (in kelvin)
@@ -116,10 +125,41 @@ class Cooker:
         self.chamber_target = chamber_target
         self.chamber_tolerance = chamber_tolerance
 
+    # returns a reading from the chamber
     def read_chamber(self):
-        chan = AnalogIn(mcp, MCP.P0)
-        logging.debug(
-            f'Read chamber value of: {chan.value} and voltage of {chan.voltage}')
+        logging.debug(f'Read chamber value of: {self.chamber_thermistor.reading().fahrenheit()}')
+        return self.chamber_thermistor.reading()
+    
+    # returns a collection of readings the food probes
+    def read_food(self):
+        return [t.reading() for t in self.food_thermistors]
+
+    def safe_to_turn_on(self):
+        return time.time() > self.last_cooker_on_time + self.COOKER_ON_DELAY
+
+    def cooker_on(self):
+        if((not self.is_cooker_on) and self.safe_to_turn_on()):
+            logging.debug('Turning on cooker')
+            # turn on the cooker
+            self.COOKER_PIN.value = True
+            self.is_cooker_on = True
+            self.last_cooker_on_time = time.time()
+
+    def cooker_off(self):
+        if(self.is_cooker_on):
+            logging.debug('Turning off cooker')
+            self.COOKER_PIN.value = False
+            self.is_cooker_on = False
+    
+    # expected to be called at an interval in a loop
+    def update_cooker(self):
+        chamber_temperature = self.read_chamber()
+        # if the chamber temperature is over target by tolerance amount, turn off the cooker
+        if(chamber_temperature.kelvins > self.chamber_target + self.chamber_tolerance):
+            self.cooker_off()
+        # if the chamber temperature is below target by tolerance amount, turn on the cooker
+        elif(chamber_temperature.kelvins < self.chamber_target - self.chamber_tolerance):
+            self.cooker_on()
 
 
 class Client:
@@ -169,6 +209,7 @@ def main():
 
     chamber = Thermistor(mcp, MCP.P0)
     food = Thermistor(mcp, MCP.P2)
+    cooker = Cooker([chamber, food], 383.15)
 
     while True:
         # print(f'Chamber: {chamber.value:5d}, {chamber.voltage:8f}V'
@@ -178,7 +219,10 @@ def main():
         chamber_reading = chamber.reading()
         food_reading = food.reading()
         print(f'Value: {chamber_reading.value}, C: {chamber_reading.fahrenheit()} | Value: {food_reading.value}, C: {food_reading.fahrenheit()}')
+
+        cooker.cooker_on()
         time.sleep(0.5)
+        cooker.cooker_off()
 
     # cooker = Cooker([Thermistor(), Thermistor()], 80.0)
     # cooker.read_chamber()
