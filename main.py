@@ -65,7 +65,7 @@ class Thermistor:
 
         # need 3 calibration points to do anything
         if(len(self.calibration_points) == 3):
-            logging.debug('Calculating thermistor coefficients')
+            logging.debug(f'Calculating thermistor coefficients for pin {pin}')
             self.calibration_points.sort(reverse=True)
 
             # https://en.wikipedia.org/wiki/Steinhart%E2%80%93Hart_equation, calulated coefficients
@@ -84,7 +84,7 @@ class Thermistor:
             self.b = g2 - self.c * ((l1 ** 2) + (l1 * l2) + (l2 ** 2))
             self.a = y1 - ((self.b + ((l1 ** 2) * self.c)) * l1)
         else:
-            logging.debug('Using default thermistor coefficients')
+            logging.debug(f'Using default thermistor coefficients for pin {pin}')
             # Default coefficients: https://tvwbb.com/threads/thermoworks-tx-1001x-op-tx-1003x-ap-probe-steinhart-hart-coefficients.69233/
             self.a = 0.0007343140544
             self.b = 0.0002157437229
@@ -127,7 +127,6 @@ class Cooker:
 
     # returns a reading from the chamber
     def read_chamber(self):
-        logging.debug(f'Read chamber value of: {self.chamber_thermistor.reading().fahrenheit()}')
         return self.chamber_thermistor.reading()
     
     # returns a list of readings from the food probes
@@ -203,21 +202,17 @@ class Client:
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    dud = AnalogIn(mcp, MCP.P1)
-    food = AnalogIn(mcp, MCP.P2)
-    none = AnalogIn(mcp, MCP.P6)
 
-    chamber = Thermistor(mcp, MCP.P0)
-    food = Thermistor(mcp, MCP.P2)
-    cooker = Cooker([chamber, food], 383.15)
+    probes = [Thermistor(mcp, MCP.P0), Thermistor(mcp, MCP.P2), Thermistor(mcp, MCP.P4), Thermistor(mcp, MCP.P6)]
+    cooker = Cooker(probes, 383.15)
 
     while True:
         # print(f'Chamber: {chamber.value:5d}, {chamber.voltage:8f}V'
         #       f'Food:    {food.value:5d}, {food.voltage:8f}V'
         #       f'Dud:     {dud.value:5d}, {dud.voltage:8f}V'
         #       f'None:    {none.value:5d}, {none.voltage:8f}V')
-        chamber_reading = chamber.reading()
-        food_reading = food.reading()
+        chamber_reading = cooker.read_chamber()
+        food_reading = cooker.read_food()[0]
         print(f'Value: {chamber_reading.value}, C: {chamber_reading.fahrenheit()} | Value: {food_reading.value}, C: {food_reading.fahrenheit()}')
 
         cooker.cooker_on()
