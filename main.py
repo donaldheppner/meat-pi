@@ -75,7 +75,11 @@ class Client:
 def main():
     logging.basicConfig(level=logging.DEBUG)
 
-    probes = [Thermistor(mcp, MCP.P0), Thermistor(mcp, MCP.P2), Thermistor(mcp, MCP.P4), Thermistor(mcp, MCP.P6)]
+    with open('calibration.json') as f:
+        probes = Thermistor.load_from_config(mcp, f.read())
+
+    probes[0] = Thermistor(mcp, MCP.P0)
+    # probes = [Thermistor(mcp, MCP.P0), Thermistor(mcp, MCP.P2), Thermistor(mcp, MCP.P4), Thermistor(mcp, MCP.P6)]
     cooker = Cooker(probes, 383.15)
 
     while True:
@@ -85,7 +89,8 @@ def main():
         #       f'None:    {none.value:5d}, {none.voltage:8f}V')
         chamber_reading = cooker.read_chamber()
         food_reading = cooker.read_food()[0]
-        print(f'C: {chamber_reading.value}, C: {chamber_reading.fahrenheit()} | Value: {food_reading.value}, C: {food_reading.fahrenheit()}')
+        print(f'V: {chamber_reading.value}, R:{chamber_reading.resistance:,.0f} K: {chamber_reading.kelvins:.1f} -'\
+            f' V: {food_reading.value}, R:{food_reading.resistance:,.0f} K: {food_reading.kelvins:.1f}')
 
         cooker.cooker_on()
         time.sleep(0.5)

@@ -3,16 +3,16 @@
         "pin": 0,
         "points": [
             {
-                "kelvins:": 280.92,
-                "resistance:": 128378
+                "kelvins": 298.15,
+                "resistance": 96600
             },
             {
-                "kelvins:": 296.48,
-                "resistance:": 80619
+                "kelvins": 323.15,
+                "resistance": 34050
             },
             {
-                "kelvins:": 368.15,
-                "resistance:": 7655
+                "kelvins": 373.15,
+                "resistance": 6180
             }
         ]
     },
@@ -20,16 +20,16 @@
         "pin": 2,
         "points": [
             {
-                "kelvins:": 280.92,
-                "resistance:": 128378
+                "kelvins": 280.92,
+                "resistance": 128378
             },
             {
-                "kelvins:": 296.48,
-                "resistance:": 80619
+                "kelvins": 296.48,
+                "resistance": 80619
             },
             {
-                "kelvins:": 368.15,
-                "resistance:": 7655
+                "kelvins": 368.15,
+                "resistance": 7655
             }
         ]
     },
@@ -37,16 +37,16 @@
         "pin": 4,
         "points": [
             {
-                "kelvins:": 280.92,
-                "resistance:": 128378
+                "kelvins": 280.92,
+                "resistance": 128378
             },
             {
-                "kelvins:": 296.48,
-                "resistance:": 80619
+                "kelvins": 296.48,
+                "resistance": 80619
             },
             {
-                "kelvins:": 368.15,
-                "resistance:": 7655
+                "kelvins": 368.15,
+                "resistance": 7655
             }
         ]
     },
@@ -54,16 +54,16 @@
         "pin": 6,
         "points": [
             {
-                "kelvins:": 280.92,
-                "resistance:": 128378
+                "kelvins": 280.92,
+                "resistance": 128378
             },
             {
-                "kelvins:": 296.48,
-                "resistance:": 80619
+                "kelvins": 296.48,
+                "resistance": 80619
             },
             {
-                "kelvins:": 368.15,
-                "resistance:": 7655
+                "kelvins": 368.15,
+                "resistance": 7655
             }
         ]
     }

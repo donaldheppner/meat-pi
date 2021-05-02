@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import time
 import threading
 import logging
+import json
 
 # https://github.com/adafruit/Adafruit_CircuitPython_MCP3xxx
 import busio
@@ -18,7 +19,7 @@ class CalibrationPoint:
         self.temperature = temperature
 
     def __lt__(self, other):
-        return self.resistance < other.resistance
+        return self.temperature < other.temperature
 
 
 class ThermistorReading:
@@ -46,12 +47,12 @@ class Thermistor:
         # need 3 calibration points to do anything
         if(len(self.calibration_points) == 3):
             logging.debug(f'Calculating thermistor coefficients for pin {pin}')
-            self.calibration_points.sort(reverse=True)
+            self.calibration_points.sort()
 
             # https://en.wikipedia.org/wiki/Steinhart%E2%80%93Hart_equation, calulated coefficients
-            l1 = math.log1p(calibration_points[0].resistance)
-            l2 = math.log1p(calibration_points[1].resistance)
-            l3 = math.log1p(calibration_points[2].resistance)
+            l1 = math.log(calibration_points[0].resistance)
+            l2 = math.log(calibration_points[1].resistance)
+            l3 = math.log(calibration_points[2].resistance)
 
             y1 = 1 / calibration_points[0].temperature
             y2 = 1 / calibration_points[1].temperature
@@ -61,8 +62,11 @@ class Thermistor:
             g3 = (y3-y1)/(l3-l1)
 
             self.c = ((g3 - g2) / (l3 - l2)) * ((l1 + l2 + l3) ** -1)
-            self.b = g2 - self.c * ((l1 ** 2) + (l1 * l2) + (l2 ** 2))
+            self.b = g2 - (self.c * ((l1 ** 2) + (l1 * l2) + (l2 ** 2)))
             self.a = y1 - ((self.b + ((l1 ** 2) * self.c)) * l1)
+
+            logging.debug(f'Coefficients for pin {pin} = a: {self.a}, b: {self.b}, c: {self.c}')
+
         else:
             logging.debug(f'Using default thermistor coefficients for pin {pin}')
             # Default coefficients: https://tvwbb.com/threads/thermoworks-tx-1001x-op-tx-1003x-ap-probe-steinhart-hart-coefficients.69233/
@@ -83,6 +87,29 @@ class Thermistor:
     
     def reading(self):
         return self.calculate_reading(self.thermistor.value)
+    
+    def load_from_config(mcp, config):
+        def map_pin(pin):
+            if(pin == 0):
+                return MCP.P0
+            elif(pin == 2):
+                return MCP.P2
+            elif(pin == 4):
+                return MCP.P4
+            elif(pin == 6):
+                return MCP.P6
+            else:
+                raise ValueError(f'Invalid pin: {pin}')
+
+        result = []
+        data = json.loads(config)
+        for calibration in data:
+            pin = map_pin(calibration['pin'])
+            points = [CalibrationPoint(p['kelvins'], p['resistance']) for p in calibration['points']]
+            result.append(Thermistor(mcp, pin, points))
+        
+        return result
+
 
 class Cooker:
     is_cooker_on = False

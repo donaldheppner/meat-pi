@@ -12,9 +12,9 @@ def temp_calc(adc):
     # C =  0.0000000951568577
 
     # https://en.wikipedia.org/wiki/Steinhart%E2%80%93Hart_equation, calulated coefficients
-    L1 = math.log1p(128378)     # freezing
-    L2 = math.log1p(77521)     # room temp
-    L3 = math.log1p(7239)       # boiling
+    L1 = math.log(128378)     # freezing
+    L2 = math.log(77521)     # room temp
+    L3 = math.log(7239)       # boiling
 
     Y1 = 1 / 280.93             # freezing as recorded
     Y2 = 1 / 297.15             # room as recorded
