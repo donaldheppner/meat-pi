@@ -54,12 +54,19 @@ class Thermistor:
             l2 = math.log(calibration_points[1].resistance)
             l3 = math.log(calibration_points[2].resistance)
 
+            logging.debug(f'R1: {calibration_points[0].resistance}, R2: {calibration_points[1].resistance}, R3: {calibration_points[2].resistance}')
+            logging.debug(f'L1: {l1}, L2: {l2}, L3: {l3}')
+
             y1 = 1 / calibration_points[0].temperature
             y2 = 1 / calibration_points[1].temperature
             y3 = 1 / calibration_points[2].temperature
 
+            logging.debug(f'Y1: {y1}, Y2: {y2}, Y3: {y3}')
+
             g2 = (y2-y1)/(l2-l1)
             g3 = (y3-y1)/(l3-l1)
+
+            logging.debug(f'G2: {g2}, G3: {g3}')
 
             self.c = ((g3 - g2) / (l3 - l2)) * ((l1 + l2 + l3) ** -1)
             self.b = g2 - (self.c * ((l1 ** 2) + (l1 * l2) + (l2 ** 2)))
@@ -105,7 +112,7 @@ class Thermistor:
         data = json.loads(config)
         for calibration in data:
             pin = map_pin(calibration['pin'])
-            points = [CalibrationPoint(p['kelvins'], p['resistance']) for p in calibration['points']]
+            points = [CalibrationPoint(p['resistance'], p['kelvins']) for p in calibration['points']]
             result.append(Thermistor(mcp, pin, points))
         
         return result
