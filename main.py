@@ -1,37 +1,32 @@
 import math
-import RPi.GPIO as GPIO
+
+try:
+    import RPi.GPIO as GPIO
+except:
+    import Mock.GPIO as GPIO
+
 import time
 import threading
 import logging
-
+logging.basicConfig(level=logging.DEBUG)
 # Using the Python Device SDK for IoT Hub:
 #   https://github.com/Azure/azure-iot-sdk-python
 # The sample connects to a device-specific MQTT endpoint on your IoT Hub.
 from azure.iot.device import IoTHubDeviceClient, Message, MethodResponse
 
-# https://github.com/adafruit/Adafruit_CircuitPython_MCP3xxx
-import busio
-import digitalio
-import board
-import adafruit_mcp3xxx.mcp3008 as MCP
-from adafruit_mcp3xxx.analog_in import AnalogIn
-
 from Cooker import Cooker, Thermistor
+
+try:
+    from Board import Board
+except Exception as e:
+    logging.info(f'Could not load Board {e}')
+    from MockBoard import Board
+
 
 # The device connection string to authenticate the device with your IoT hub.
 # Using the Azure CLI:
 # az iot hub device-identity show-connection-string --hub-name {YourIoTHubName} --device-id MyNodeDevice --output table
 CONNECTION_STRING = "HostName=meat-hub.azure-devices.net;DeviceId=MyPythonDevice;SharedAccessKey=**TO READ FROM CONFIG**"
-
-
-# create the spi bus
-spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
-
-# create the cs (chip select)
-cs = digitalio.DigitalInOut(board.D5)
-
-# create the mcp object
-mcp = MCP.MCP3008(spi, cs)
 
 
 class Client:
@@ -72,15 +67,16 @@ class Client:
         device_client.send_method_response(method_response)
 
 
-def main():
-    logging.basicConfig(level=logging.DEBUG)
+def main():    
+
+    b = Board()
 
     with open('calibration.json') as f:
-        probes = Thermistor.load_from_config(mcp, f.read())
+        probes = Thermistor.load_from_config(b, f.read())
 
-    probes[0] = Thermistor(mcp, MCP.P0)
+    probes[0] = Thermistor(b, 0)
     # probes = [Thermistor(mcp, MCP.P0), Thermistor(mcp, MCP.P2), Thermistor(mcp, MCP.P4), Thermistor(mcp, MCP.P6)]
-    cooker = Cooker(probes, 383.15)
+    cooker = Cooker(b, probes, 383.15)
 
     while True:
         # print(f'Chamber: {chamber.value:5d}, {chamber.voltage:8f}V'
@@ -89,8 +85,8 @@ def main():
         #       f'None:    {none.value:5d}, {none.voltage:8f}V')
         chamber_reading = cooker.read_chamber()
         food_reading = cooker.read_food()[0]
-        print(f'V: {chamber_reading.value}, R:{chamber_reading.resistance:,.0f} K: {chamber_reading.kelvins:.1f} -'\
-            f' V: {food_reading.value}, R:{food_reading.resistance:,.0f} K: {food_reading.kelvins:.1f}')
+        print(f'V: {chamber_reading.value}, R:{chamber_reading.resistance:,.0f} K: {chamber_reading.kelvins:.1f} F: {chamber_reading.fahrenheit():.1f} -'\
+            f' V: {food_reading.value}, R:{food_reading.resistance:,.0f} K: {food_reading.kelvins:.1f} F: {food_reading.fahrenheit():.1f} ')
 
         cooker.cooker_on()
         time.sleep(0.5)

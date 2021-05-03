@@ -1,17 +1,16 @@
 import math
-import RPi.GPIO as GPIO
 import time
 import threading
 import logging
 import json
 
-# https://github.com/adafruit/Adafruit_CircuitPython_MCP3xxx
-import busio
-import digitalio
-import board
-import adafruit_mcp3xxx.mcp3008 as MCP
-from adafruit_mcp3xxx.analog_in import AnalogIn
+try:
+    from Board import Board
+except Exception as e:
+    logging.info(f'Could not load Board: {e}')
+    from MockBoard import Board
 
+# https://github.com/adafruit/Adafruit_CircuitPython_MCP3xxx
 
 class CalibrationPoint:
     def __init__(self, resistance, temperature):
@@ -38,8 +37,9 @@ class ThermistorReading:
 
 class Thermistor:
     # calculates the coefficients based on the calibartion points
-    def __init__(self, mcp, pin, calibration_points=[], resistor=10000, voltage_in=3.3):
-        self.thermistor = AnalogIn(mcp, pin)
+    def __init__(self, board, pin, calibration_points=[], resistor=10000, voltage_in=3.3):
+        self.board = board
+        self.pin = pin
         self.calibration_points = calibration_points
         self.resistor = resistor
         self.voltage_in = voltage_in
@@ -93,27 +93,15 @@ class Thermistor:
             return ThermistorReading(self, 0, 0, 0)
     
     def reading(self):
-        return self.calculate_reading(self.thermistor.value)
+        return self.calculate_reading(self.board.get_value(self.pin))
     
-    def load_from_config(mcp, config):
-        def map_pin(pin):
-            if(pin == 0):
-                return MCP.P0
-            elif(pin == 2):
-                return MCP.P2
-            elif(pin == 4):
-                return MCP.P4
-            elif(pin == 6):
-                return MCP.P6
-            else:
-                raise ValueError(f'Invalid pin: {pin}')
-
+    def load_from_config(board, config):
         result = []
         data = json.loads(config)
         for calibration in data:
-            pin = map_pin(calibration['pin'])
+            pin = calibration['pin']
             points = [CalibrationPoint(p['resistance'], p['kelvins']) for p in calibration['points']]
-            result.append(Thermistor(mcp, pin, points))
+            result.append(Thermistor(board, pin, points))
         
         return result
 
@@ -123,8 +111,6 @@ class Cooker:
     last_cooker_on_time = 0
 
     COOKER_ON_DELAY = 120   # don't turn the cooker on if it was last turned less than X seconds ago
-    COOKER_PIN = digitalio.DigitalInOut(board.D18)
-    COOKER_PIN.direction = digitalio.Direction.OUTPUT
 
     # A Cooker is defined as:
     # - 1 chamber probe and (up to) 3 food probes (chamber is assumed to be index 0)
@@ -132,7 +118,8 @@ class Cooker:
     # - A status, indicating if the cooker is heating
     # - A configuration used to convert ADC values to temperatures (kelvin)
     # up to 4 thermistors, [0] being the chamber
-    def __init__(self, thermistors, chamber_target, chamber_tolerance=2.0):
+    def __init__(self, board, thermistors, chamber_target, chamber_tolerance=2.0):
+        self.board = board
         self.thermistors = thermistors
         self.chamber_target = chamber_target
         self.chamber_tolerance = chamber_tolerance
@@ -155,14 +142,14 @@ class Cooker:
         if((not self.is_cooker_on) and self.safe_to_turn_on()):
             logging.debug('Turning on cooker')
             # turn on the cooker
-            self.COOKER_PIN.value = True
+            self.board.turn_on_relay()
             self.is_cooker_on = True
             self.last_cooker_on_time = time.time()
 
     def cooker_off(self):
         if(self.is_cooker_on):
             logging.debug('Turning off cooker')
-            self.COOKER_PIN.value = False
+            self.board.turn_off_relay()
             self.is_cooker_on = False
     
     # expected to be called at an interval in a loop to maintain cooker temperature
