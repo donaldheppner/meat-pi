@@ -1,14 +1,9 @@
 import math
-
-try:
-    import RPi.GPIO as GPIO
-except:
-    import Mock.GPIO as GPIO
-
 import time
 import threading
 import logging
 logging.basicConfig(level=logging.DEBUG)
+
 # Using the Python Device SDK for IoT Hub:
 #   https://github.com/Azure/azure-iot-sdk-python
 # The sample connects to a device-specific MQTT endpoint on your IoT Hub.
@@ -16,6 +11,7 @@ from azure.iot.device import IoTHubDeviceClient, Message, MethodResponse
 
 from Cooker import Cooker, Thermistor
 
+# the Board encapsulates all interactions with the Pi and hardware dependencies
 try:
     from Board import Board
 except Exception as e:
@@ -35,8 +31,14 @@ class Client:
             self.payload = payload
             self.status = status
 
-    def __init__(self):
+    def __init__(self, cooker):
         self.client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+        self.cooker = cooker
+
+        # Start a thread to listen 
+        device_method_thread = threading.Thread(target=device_method_listener, args=(self, client))
+        device_method_thread.daemon = True
+        device_method_thread.start()
 
     def device_method_listener(device_client):
         method_request = device_client.receive_method_request()
@@ -47,9 +49,10 @@ class Client:
             )
         )
 
-        if method_request.name == "SetTelemetryInterval":
+        if method_request.name == "SetTargetTemperature":
             try:
-                INTERVAL = int(method_request.payload)
+                target_temp = float(method_request.payload)
+                
             except ValueError:
                 response_payload = {"Response": "Invalid parameter"}
                 response_status = 400
@@ -67,15 +70,12 @@ class Client:
         device_client.send_method_response(method_response)
 
 
-def main():    
-
+def main():
     b = Board()
 
     with open('calibration.json') as f:
         probes = Thermistor.load_from_config(b, f.read())
 
-    probes[0] = Thermistor(b, 0)
-    # probes = [Thermistor(mcp, MCP.P0), Thermistor(mcp, MCP.P2), Thermistor(mcp, MCP.P4), Thermistor(mcp, MCP.P6)]
     cooker = Cooker(b, probes, 383.15)
 
     while True:

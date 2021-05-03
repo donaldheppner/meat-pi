@@ -34,6 +34,11 @@ class ThermistorReading:
     def fahrenheit(self):
         return ((self.celcius() * 9) / 5) + 32
 
+def convert_fahrenheit_to_kelvins(f):
+    return convert_fahrenheit_to_celcius(f) + 273.15
+
+def convert_fahrenheit_to_celcius(f):
+    return (f - 32) * 5 / 9
 
 class Thermistor:
     # calculates the coefficients based on the calibartion points
@@ -139,7 +144,7 @@ class Cooker:
         return time.time() > self.last_cooker_on_time + self.COOKER_ON_DELAY
 
     def cooker_on(self):
-        if((not self.is_cooker_on) and self.safe_to_turn_on()):
+        if (not self.is_cooker_on) and self.safe_to_turn_on():
             logging.debug('Turning on cooker')
             # turn on the cooker
             self.board.turn_on_relay()
@@ -147,17 +152,29 @@ class Cooker:
             self.last_cooker_on_time = time.time()
 
     def cooker_off(self):
-        if(self.is_cooker_on):
+        if self.is_cooker_on:
             logging.debug('Turning off cooker')
             self.board.turn_off_relay()
             self.is_cooker_on = False
     
+    def set_target_temperature_kelvins(self, kelvins):
+        logging.debug(f'Setting target temperature to {kelvins}K')        
+        # max is about 450 (350F), min is zero (always off)
+        if kelvins <= 450:
+            self.chamber_target = kelvins
+        else:
+            logging.warn(f'Target temperature outside of range: {kelvins}K')
+
+    
     # expected to be called at an interval in a loop to maintain cooker temperature
     def update_cooker(self):
-        chamber_temperature = self.read_chamber()
+        readings = self.read_thermistors()
+        chamber_temperature = readings[0]
         # if the chamber temperature is over target by tolerance amount, turn off the cooker
         if(chamber_temperature.kelvins > self.chamber_target + self.chamber_tolerance):
             self.cooker_off()
         # if the chamber temperature is below target by tolerance amount, turn on the cooker
         elif(chamber_temperature.kelvins < self.chamber_target - self.chamber_tolerance):
             self.cooker_on()
+        
+        return readings
