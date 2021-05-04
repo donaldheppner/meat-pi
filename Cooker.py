@@ -3,6 +3,7 @@ import time
 import threading
 import logging
 import json
+import uuid
 
 try:
     from Board import Board
@@ -11,6 +12,12 @@ except Exception as e:
     from MockBoard import Board
 
 # https://github.com/adafruit/Adafruit_CircuitPython_MCP3xxx
+
+def convert_fahrenheit_to_kelvins(f):
+    return convert_fahrenheit_to_celcius(f) + 273.15
+
+def convert_fahrenheit_to_celcius(f):
+    return (f - 32) * 5 / 9
 
 class CalibrationPoint:
     def __init__(self, resistance, temperature):
@@ -33,12 +40,14 @@ class ThermistorReading:
 
     def fahrenheit(self):
         return ((self.celcius() * 9) / 5) + 32
-
-def convert_fahrenheit_to_kelvins(f):
-    return convert_fahrenheit_to_celcius(f) + 273.15
-
-def convert_fahrenheit_to_celcius(f):
-    return (f - 32) * 5 / 9
+    
+    def to_dict(self):
+        return {
+            'pin': self.thermistor.pin,
+            'value': self.thermistor.value,
+            'resistance': self.thermistor.resistance,
+            'kelvins': self.thermistor.kelvins,
+        }
 
 class Thermistor:
     # calculates the coefficients based on the calibartion points
@@ -123,7 +132,8 @@ class Cooker:
     # - A status, indicating if the cooker is heating
     # - A configuration used to convert ADC values to temperatures (kelvin)
     # up to 4 thermistors, [0] being the chamber
-    def __init__(self, board, thermistors, chamber_target, chamber_tolerance=2.0):
+    def __init__(self, board, thermistors, chamber_target=0.0, chamber_tolerance=2.0):
+        self.cook_id = uuid.uuid4().hex
         self.board = board
         self.thermistors = thermistors
         self.chamber_target = chamber_target
@@ -139,6 +149,15 @@ class Cooker:
     
     def read_thermistors(self):
         return [t.reading() for t in self.thermistors]
+    
+    # returns a full-set of readings from the cook in an easy-to-serialize format
+    def get_cook_reading(self, readings):
+        return {
+            'cook_id': self.cook_id,
+            'chamber_target': self.chamber_target,
+            'cooker_on': self.is_cooker_on,
+            'readings': [t.to_dict() for t in readings]
+        }
 
     def safe_to_turn_on(self):
         return time.time() > self.last_cooker_on_time + self.COOKER_ON_DELAY
@@ -163,7 +182,9 @@ class Cooker:
         if kelvins <= 450:
             self.chamber_target = kelvins
         else:
-            logging.warn(f'Target temperature outside of range: {kelvins}K')
+            message = f'Target temperature outside of range: {kelvins}K'
+            logging.error(message)
+            raise ValueError(message)
 
     
     # expected to be called at an interval in a loop to maintain cooker temperature
