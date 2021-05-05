@@ -11,11 +11,14 @@ except Exception as e:
     logging.info(f'Could not load Board: {e}')
     from MockBoard import Board
 
+
 def convert_fahrenheit_to_kelvins(f):
     return convert_fahrenheit_to_celcius(f) + 273.15
 
+
 def convert_fahrenheit_to_celcius(f):
     return (f - 32) * 5 / 9
+
 
 class CalibrationPoint:
     def __init__(self, resistance, temperature):
@@ -30,15 +33,15 @@ class ThermistorReading:
     def __init__(self, thermistor, value, resistance, kelvins):
         self.thermistor = thermistor
         self.value = value
-        self.resistance = resistance
-        self.kelvins = kelvins
+        self.resistance = round(float(resistance), 3)
+        self.kelvins = round(float(kelvins), 3)
 
     def celcius(self):
         return self.kelvins - 273.15
 
     def fahrenheit(self):
         return ((self.celcius() * 9) / 5) + 32
-    
+
     def to_dict(self):
         return {
             'pin': self.thermistor.pin,
@@ -46,6 +49,7 @@ class ThermistorReading:
             'resistance': self.resistance,
             'kelvins': self.kelvins,
         }
+
 
 class Thermistor:
     # calculates the coefficients based on the calibartion points
@@ -66,7 +70,8 @@ class Thermistor:
             l2 = math.log(calibration_points[1].resistance)
             l3 = math.log(calibration_points[2].resistance)
 
-            logging.debug(f'R1: {calibration_points[0].resistance}, R2: {calibration_points[1].resistance}, R3: {calibration_points[2].resistance}')
+            logging.debug(
+                f'R1: {calibration_points[0].resistance}, R2: {calibration_points[1].resistance}, R3: {calibration_points[2].resistance}')
             logging.debug(f'L1: {l1}, L2: {l2}, L3: {l3}')
 
             y1 = 1 / calibration_points[0].temperature
@@ -84,10 +89,12 @@ class Thermistor:
             self.b = g2 - (self.c * ((l1 ** 2) + (l1 * l2) + (l2 ** 2)))
             self.a = y1 - ((self.b + ((l1 ** 2) * self.c)) * l1)
 
-            logging.debug(f'Coefficients for pin {pin} = a: {self.a}, b: {self.b}, c: {self.c}')
+            logging.debug(
+                f'Coefficients for pin {pin} = a: {self.a}, b: {self.b}, c: {self.c}')
 
         else:
-            logging.debug(f'Using default thermistor coefficients for pin {pin}')
+            logging.debug(
+                f'Using default thermistor coefficients for pin {pin}')
             # Default coefficients: https://tvwbb.com/threads/thermoworks-tx-1001x-op-tx-1003x-ap-probe-steinhart-hart-coefficients.69233/
             self.a = 0.0007343140544
             self.b = 0.0002157437229
@@ -99,22 +106,23 @@ class Thermistor:
             resistance = self.resistor / ((65535 / adc) - 1)
             lnResistance = math.log1p(resistance)
             kelvins = 1 / (self.a + (self.b * lnResistance) +
-                        (self.c * (lnResistance ** 3)))
+                           (self.c * (lnResistance ** 3)))
             return ThermistorReading(self, adc, resistance, kelvins)
         else:
             return ThermistorReading(self, 0, 0, 0)
-    
+
     def reading(self):
         return self.calculate_reading(self.board.get_value(self.pin))
-    
+
     def load_from_config(board, config):
         result = []
         data = json.loads(config)
         for calibration in data:
             pin = calibration['pin']
-            points = [CalibrationPoint(p['resistance'], p['kelvins']) for p in calibration['points']]
+            points = [CalibrationPoint(p['resistance'], p['kelvins'])
+                      for p in calibration['points']]
             result.append(Thermistor(board, pin, points))
-        
+
         return result
 
 
@@ -122,7 +130,8 @@ class Cooker:
     is_cooker_on = False
     last_cooker_on_time = 0
 
-    COOKER_ON_DELAY = 120   # don't turn the cooker on if it was last turned less than X seconds ago
+    # don't turn the cooker on if it was last turned less than X seconds ago
+    COOKER_ON_DELAY = 120
 
     # A Cooker is defined as:
     # - 1 chamber probe and (up to) 3 food probes (chamber is assumed to be index 0)
@@ -140,14 +149,14 @@ class Cooker:
     # returns a reading from the chamber
     def read_chamber(self):
         return self.thermistors[0].reading()
-    
+
     # returns a list of readings from the food probes
     def read_food(self):
         return [t.reading() for t in self.thermistors[1:]]
-    
+
     def read_thermistors(self):
         return [t.reading() for t in self.thermistors]
-    
+
     # returns a full-set of readings from the cook in an easy-to-serialize format
     def get_cook_reading(self, readings):
         return {
@@ -173,9 +182,9 @@ class Cooker:
             logging.debug('Turning off cooker')
             self.board.turn_off_relay()
             self.is_cooker_on = False
-    
+
     def set_target_temperature_kelvins(self, kelvins):
-        logging.debug(f'Setting target temperature to {kelvins}K')        
+        logging.debug(f'Setting target temperature to {kelvins}K')
         # max is about 450 (350F), min is zero (always off)
         if kelvins <= 450:
             self.chamber_target = kelvins
@@ -184,8 +193,8 @@ class Cooker:
             logging.error(message)
             raise ValueError(message)
 
-    
     # expected to be called at an interval in a loop to maintain cooker temperature
+
     def update_cooker(self):
         readings = self.read_thermistors()
         chamber_temperature = readings[0]
@@ -195,5 +204,5 @@ class Cooker:
         # if the chamber temperature is below target by tolerance amount, turn on the cooker
         elif(chamber_temperature.kelvins < self.chamber_target - self.chamber_tolerance):
             self.cooker_on()
-        
+
         return readings
