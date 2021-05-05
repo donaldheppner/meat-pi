@@ -11,8 +11,6 @@ except Exception as e:
     logging.info(f'Could not load Board: {e}')
     from MockBoard import Board
 
-# https://github.com/adafruit/Adafruit_CircuitPython_MCP3xxx
-
 def convert_fahrenheit_to_kelvins(f):
     return convert_fahrenheit_to_celcius(f) + 273.15
 
@@ -44,9 +42,9 @@ class ThermistorReading:
     def to_dict(self):
         return {
             'pin': self.thermistor.pin,
-            'value': self.thermistor.value,
-            'resistance': self.thermistor.resistance,
-            'kelvins': self.thermistor.kelvins,
+            'value': self.value,
+            'resistance': self.resistance,
+            'kelvins': self.kelvins,
         }
 
 class Thermistor:
