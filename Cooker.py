@@ -1,5 +1,6 @@
 import math
 import time
+import datetime
 import threading
 import logging
 import json
@@ -47,7 +48,7 @@ class ThermistorReading:
             'pin': self.thermistor.pin,
             'value': self.value,
             'resistance': self.resistance,
-            'kelvins': self.kelvins,
+            'kelvins': self.kelvins
         }
 
 
@@ -161,6 +162,7 @@ class Cooker:
     def get_cook_reading(self, readings):
         return {
             'cook_id': self.cook_id,
+            'time': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
             'chamber_target': self.chamber_target,
             'cooker_on': self.is_cooker_on,
             'readings': [t.to_dict() for t in readings]

@@ -10,7 +10,8 @@ import json
 # The sample connects to a device-specific MQTT endpoint on your IoT Hub.
 from azure.iot.device import IoTHubDeviceClient, Message, MethodResponse
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler(), logging.FileHandler('cooker.log', encoding='utf-8')])
+logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
 logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 from Cooker import Cooker, Thermistor
@@ -34,8 +35,8 @@ class Client:
         # Using the Azure CLI:
         # az iot hub device-identity show-connection-string --hub-name {YourIoTHubName} --device-id MyNodeDevice --output table
         connection_string = f'HostName=meat-hub.azure-devices.net;DeviceId={device_id};SharedAccessKey={shared_access_key}'
-        self.client = IoTHubDeviceClient.create_from_connection_string(
-            connection_string)
+        self.client = IoTHubDeviceClient.create_from_connection_string(connection_string)
+        self.device_id = device_id
         self.cooker = cooker
 
         # Start a thread to listen for incoming methods
@@ -82,10 +83,10 @@ def load_config():
     LOCAL_CONFIG = 'device.local.json'
     CONFIG = 'device.json'
     configuration_file = ''
-    if os.path.isfile('device.local.json'):
-        configuration_file = LOCAL_CONFIG
-    elif os.path.isfile('device.json'):
+    if os.path.isfile(CONFIG):
         configuration_file = CONFIG
+    elif os.path.isfile(LOCAL_CONFIG):
+        configuration_file = LOCAL_CONFIG
 
     if len(configuration_file) > 0:
         with open(configuration_file) as f:
@@ -111,7 +112,7 @@ def load_probes(board):
 
 
 def main():
-    INTERVAL = 5 # seconds
+    INTERVAL = 25 # seconds
     b = Board()
 
     configuration = load_config()
@@ -124,6 +125,7 @@ def main():
     while True:
         readings = cooker.update_cooker()
         cook_readings = cooker.get_cook_reading(readings)
+        cook_readings['device_id'] = client.device_id
 
         logging.info(f'Cook readings: {cook_readings}')
 

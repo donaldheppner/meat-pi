@@ -5,6 +5,9 @@ import logging
 import json
 import uuid
 
+logging.basicConfig(level=logging.DEBUG)
+
+
 try:
     from Board import Board
 except Exception as e:
@@ -21,7 +24,7 @@ def main():
         readings = ''
         for t in thermistors:
             r = t.reading()
-            readings += f'{t.pin}: R:{r.resistance:6.2f}  '
+            readings += f'{t.pin}: R:{r.resistance:7.2f}  '
 
         print(f'\r{readings}', end='')
         time.sleep(.1)
