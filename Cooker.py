@@ -132,7 +132,7 @@ class Cooker:
     last_cooker_on_time = 0
 
     # don't turn the cooker on if it was last turned less than X seconds ago
-    COOKER_ON_DELAY = 120
+    COOKER_ON_DELAY = 60
 
     # A Cooker is defined as:
     # - 1 chamber probe and (up to) 3 food probes (chamber is assumed to be index 0)
@@ -163,8 +163,8 @@ class Cooker:
     def get_cook_reading(self, readings):
         return {
             'cook_id': self.cook_id,
-            'time': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-            'cook_start_time': self.cook_start_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'time': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'cook_start_time': self.cook_start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'chamber_target': self.chamber_target,
             'cooker_on': self.is_cooker_on,
             'readings': [t.to_dict() for t in readings]

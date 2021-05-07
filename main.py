@@ -49,24 +49,24 @@ class Client:
         self.client.send_message(message)
 
     def device_method_listener(self, device_client):
-        method_request = device_client.receive_method_request()
-        logging.debug(
-            f'Method {method_request.name} called with payload: {method_request.payload}')
+        while True:
+            method_request = device_client.receive_method_request()
+            logging.debug(
+                f'Method {method_request.name} called with payload: {method_request.payload}')
 
-        if method_request.name == 'SetTargetTemperature':
-            response = self.set_target_temperature(method_request.payload)
-        else:
-            response = Response(
-                f'Direct method {method_request.name} is not defined', 404)
+            if method_request.name == 'SetTargetTemperature':
+                response = self.set_target_temperature(method_request)
+            else:
+                response = Response(
+                    f'Direct method {method_request.name} is not defined', 404)
 
-        method_response = MethodResponse(
-            method_request.request_id, response.status, payload=response.payload)
-        device_client.send_method_response(method_response)
+            method_response = MethodResponse(
+                method_request.request_id, response.status, payload=response.payload)
+            device_client.send_method_response(method_response)
 
-    def set_target_temperature(self, payload):
+    def set_target_temperature(self, method_request):
         try:
-            self.cooker.set_target_temperature_kelvins(
-                float(method_request.payload))
+            self.cooker.set_target_temperature_kelvins(float(method_request.payload))
         except ValueError:
             payload = {'Response': 'Invalid parameter'}
             status = 400
@@ -75,7 +75,7 @@ class Client:
                 'Response': f'Executed direct method {method_request.name}'}
             status = 200
 
-        return Response(payload, status)
+        return MethodResponse(payload, status)
 
 
 def load_config():
@@ -121,20 +121,28 @@ def main():
     cooker = Cooker(b, probes)
     client = Client(cooker, configuration['device_id'], configuration['sak'])
 
-    # main thread to run the cook
-    while True:
-        readings = cooker.update_cooker()
-        cook_readings = cooker.get_cook_reading(readings)
-        cook_readings['device_id'] = client.device_id
+    try:
+        # main thread to run the cook
+        while True:
+            readings = cooker.update_cooker()
+            cook_readings = cooker.get_cook_reading(readings)
+            cook_readings['device_id'] = client.device_id
 
-        logging.info(f'Cook readings: {cook_readings}')
+            logging.info(f'Cook readings: {cook_readings}')
 
-        # send the readings for the cook
-        client.send_message(json.dumps(cook_readings))
-        time.sleep(INTERVAL)
+            # send the readings for the cook
+            client.send_message(json.dumps(cook_readings))
+            time.sleep(INTERVAL)
+    except KeyboardInterrupt:
+        print('Exiting the MeatPi')
+    finally:
+        cooker.cooker_off()
 
 
 if __name__ == '__main__':
-    print('Starting Meat-Pi')
-    print('Press Ctrl-C to exit')
-    main()
+    try:
+        print('Starting MeatPi')
+        print('Press Ctrl-C to exit')
+        main()
+    except KeyboardInterrupt:
+        print('Exiting the MeatPi')
