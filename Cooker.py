@@ -142,6 +142,7 @@ class Cooker:
     # up to 4 thermistors, [0] being the chamber
     def __init__(self, board, thermistors, chamber_target=0.0, chamber_tolerance=2.0):
         self.cook_id = uuid.uuid4().hex
+        self.cook_start_time = datetime.datetime.now(datetime.timezone.utc)
         self.board = board
         self.thermistors = thermistors
         self.chamber_target = chamber_target
@@ -163,6 +164,7 @@ class Cooker:
         return {
             'cook_id': self.cook_id,
             'time': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            'cook_start_time': self.cook_start_time.strftime('%Y-%m-%d %H:%M:%S'),
             'chamber_target': self.chamber_target,
             'cooker_on': self.is_cooker_on,
             'readings': [t.to_dict() for t in readings]
