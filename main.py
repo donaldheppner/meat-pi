@@ -106,7 +106,7 @@ def load_probes(board):
     else:
         # load default probes
         logging.debug('No probe configuration found, loading default')
-        probes = [Thermistor(b, p) for p in range(8) if x % 2 == 0]
+        probes = [Thermistor(board, p) for p in range(8) if p % 2 == 0]
 
     return probes
 
