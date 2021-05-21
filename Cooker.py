@@ -113,7 +113,7 @@ class Thermistor:
             return ThermistorReading(self, 0, 0, 0)
 
     def reading(self):
-        return self.calculate_reading(self.board.get_value(self.pin))
+        return self.calculate_reading(self.board.get_average_value(self.pin))
 
     def load_from_config(board, config):
         result = []

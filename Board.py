@@ -3,6 +3,7 @@ import board
 import busio
 import adafruit_mcp3xxx.mcp3008 as MCP
 from adafruit_mcp3xxx.analog_in import AnalogIn
+import time
 
 # https://github.com/adafruit/Adafruit_CircuitPython_MCP3xxx
 
@@ -25,23 +26,38 @@ class Board:
     def __init__(self):
         pass
 
-    def get_value(self, pin):
-        def get_pin():
-            if(pin == 0):
-                return MCP.P0
-            elif(pin == 2):
-                return MCP.P2
-            elif(pin == 4):
-                return MCP.P4
-            elif(pin == 6):
-                return MCP.P6
-            else:
-                raise ValueError(f'Invalid pin: {pin}')
-
+    def get_pin(pin):
+        if(pin == 0):
+            return MCP.P0
+        elif(pin == 2):
+            return MCP.P2
+        elif(pin == 4):
+            return MCP.P4
+        elif(pin == 6):
+            return MCP.P6
+        else:
+            raise ValueError(f'Invalid pin: {pin}')
+    
+    def get_analog_in(self, pin):
         if pin not in self.inputs:
-            self.inputs[pin] = AnalogIn(self.mcp, get_pin())
+            self.inputs[pin] = AnalogIn(self.mcp, Board.get_pin(pin))
         
-        return self.inputs[pin].value
+        return self.inputs[pin]
+
+    def get_value(self, pin):
+        return self.get_analog_in(pin).value
+
+    def get_average_value(self, pin):
+        VALUES_TO_READ = 100
+        analog_in = self.get_analog_in(pin)
+
+        # read 100 values and average them
+        total = 0
+        for x in range(VALUES_TO_READ):
+            total += analog_in.value
+            time.sleep(0)
+        
+        return int(total / VALUES_TO_READ)
     
     def turn_on_relay(self):
         self.RELAY_PIN.value = True
