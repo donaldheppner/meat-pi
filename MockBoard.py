@@ -7,9 +7,6 @@ class Board:
     def get_value(self, pin):
         return 50000
 
-    # def get_average_value(self, pin):
-    #     return 50000
-
     def turn_on_relay(self):
         pass
 
