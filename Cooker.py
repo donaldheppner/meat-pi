@@ -34,7 +34,7 @@ class CalibrationPoint:
 class ThermistorReading:
     def __init__(self, thermistor, value, resistance, kelvins):
         self.thermistor = thermistor
-        self.value = value
+        self.value = int(value)
         self.resistance = round(float(resistance), 3)
         self.kelvins = round(float(kelvins), 3)
 
