@@ -44,7 +44,7 @@ class Client:
             target=Client.device_method_listener, args=(self, self.client))
         device_method_thread.daemon = True
         device_method_thread.start()
-    
+
     def send_message(self, message):
         self.client.send_message(message)
 
@@ -57,7 +57,7 @@ class Client:
             if method_request.name == 'SetTargetTemperature':
                 response = self.set_target_temperature(method_request)
             else:
-                response = Response(
+                response = MethodResponse(
                     f'Direct method {method_request.name} is not defined', 404)
 
             method_response = MethodResponse(

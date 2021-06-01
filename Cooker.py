@@ -5,6 +5,7 @@ import threading
 import logging
 import json
 import uuid
+from collections import deque
 
 try:
     from Board import Board
@@ -51,8 +52,9 @@ class ThermistorReading:
             'kelvins': self.kelvins
         }
 
-
 class Thermistor:
+    NUMBER_OF_READINGS = 100
+
     # calculates the coefficients based on the calibartion points
     def __init__(self, board, pin, calibration_points=[], resistor=10000, voltage_in=3.3):
         self.board = board
@@ -61,9 +63,19 @@ class Thermistor:
         self.resistor = resistor
         self.voltage_in = voltage_in
 
+        # defines how ADC values are converted to temperature
+        self.setup_calibration(calibration_points)
+
+        # captures readings continuously and stores a moving average
+        self.readings = deque(maxlen=Thermistor.NUMBER_OF_READINGS)
+        self.average_reading = 0
+        self.setup_read_thread()
+
+    def setup_calibration(self, calibration_points):
         # need 3 calibration points to do anything
         if(len(self.calibration_points) == 3):
-            logging.debug(f'Calculating thermistor coefficients for pin {pin}')
+            logging.debug(
+                f'Calculating thermistor coefficients for pin {self.pin}')
             self.calibration_points.sort()
 
             # https://en.wikipedia.org/wiki/Steinhart%E2%80%93Hart_equation, calulated coefficients
@@ -91,15 +103,29 @@ class Thermistor:
             self.a = y1 - ((self.b + ((l1 ** 2) * self.c)) * l1)
 
             logging.debug(
-                f'Coefficients for pin {pin} = a: {self.a}, b: {self.b}, c: {self.c}')
+                f'Coefficients for pin {self.pin} = a: {self.a}, b: {self.b}, c: {self.c}')
 
         else:
             logging.debug(
-                f'Using default thermistor coefficients for pin {pin}')
+                f'Using default thermistor coefficients for pin {self.pin}')
             # Default coefficients: https://tvwbb.com/threads/thermoworks-tx-1001x-op-tx-1003x-ap-probe-steinhart-hart-coefficients.69233/
             self.a = 0.0007343140544
             self.b = 0.0002157437229
             self.c = 0.0000000951568577
+
+    def setup_read_thread(self):
+        thread = threading.Thread(
+            target=Thermistor.__store_average_reading, args=[self])
+        thread.daemon = True
+        thread.start()
+
+    def __store_average_reading(self):
+        while(True):
+            self.readings.append(self.board.get_value(self.pin))
+            # store the average reading
+            self.average_reading = sum(self.readings) / len(self.readings)
+            logging.debug(f'Storing average reading of: {self.average_reading}')
+            time.sleep(0.1)  # read 10 times a second
 
     def calculate_reading(self, adc):
         if(adc > 0):
@@ -113,7 +139,7 @@ class Thermistor:
             return ThermistorReading(self, 0, 0, 0)
 
     def reading(self):
-        return self.calculate_reading(self.board.get_average_value(self.pin))
+        return self.calculate_reading(self.average_reading)
 
     def load_from_config(board, config):
         result = []

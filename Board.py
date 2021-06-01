@@ -47,17 +47,16 @@ class Board:
     def get_value(self, pin):
         return self.get_analog_in(pin).value
 
-    def get_average_value(self, pin):
-        VALUES_TO_READ = 100
-        analog_in = self.get_analog_in(pin)
+    # def get_average_value(self, pin):
+    #     VALUES_TO_READ = 100
+    #     analog_in = self.get_analog_in(pin)
 
-        # read 100 values and average them
-        total = 0
-        for x in range(VALUES_TO_READ):
-            total += analog_in.value
-            time.sleep(0)
+    #     # read VALUES_TO_READ values and average them
+    #     total = 0
+    #     for x in range(VALUES_TO_READ):
+    #         total += analog_in.value
         
-        return int(total / VALUES_TO_READ)
+    #     return int(total / VALUES_TO_READ)
     
     def turn_on_relay(self):
         self.RELAY_PIN.value = True
