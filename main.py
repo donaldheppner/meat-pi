@@ -124,6 +124,7 @@ def main():
     try:
         # main thread to run the cook
         while True:
+            time.sleep(INTERVAL)
             readings = cooker.update_cooker()
             cook_readings = cooker.get_cook_reading(readings)
             cook_readings['device_id'] = client.device_id
@@ -132,7 +133,6 @@ def main():
 
             # send the readings for the cook
             client.send_message(json.dumps(cook_readings))
-            time.sleep(INTERVAL)
     except KeyboardInterrupt:
         print('Exiting the MeatPi')
     finally:
