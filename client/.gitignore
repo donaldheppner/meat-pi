@@ -131,3 +131,4 @@ dmypy.json
 
 # local config
 *.local.json
+.vscode/settings.json

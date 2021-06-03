@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using MeatPi.Web.Tables;
 using Microsoft.Azure.Cosmos.Table;
 using System;
 using System.Linq;
@@ -10,6 +9,8 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Azure.Devices;
 using Microsoft.Extensions.Configuration;
+using MeatPi.Common;
+using MeatPi.Common.Tables;
 
 namespace MeatPi.Web.Pages
 {
