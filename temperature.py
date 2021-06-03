@@ -12,24 +12,30 @@ def temp_calc(adc):
     # C =  0.0000000951568577
 
     # https://en.wikipedia.org/wiki/Steinhart%E2%80%93Hart_equation, calulated coefficients
-    L1 = math.log1p(128378)     # freezing
-    L2 = math.log1p(77521)     # room temp
-    L3 = math.log1p(7239)       # boiling
+    l1 = math.log(96600)
+    l2 = math.log(34050)
+    l3 = math.log(6180)
 
-    Y1 = 1 / 280.93             # freezing as recorded
-    Y2 = 1 / 297.15             # room as recorded
-    Y3 = 1 / 368.15             # boiling as recorded
+    print(f'L1: {l1}, L2: {l2}, L3: {l3}')
 
-    G2 = (Y2-Y1)/(L2-L1)
-    G3 = (Y3-Y1)/(L3-L1)
+    y1 = 1 / 298.15
+    y2 = 1 / 323.15
+    y3 = 1 / 373.15
 
-    C = ((G3 - G2) / (L3-L2)) * ((L1 + L2 + L3) ** -1)
-    B = G2 - C * ((L1 ** 2) + L1 * L2 + (L2 ** 2))
-    A = Y1 - (B + (L1 ** 2) * C) * L1
+    print(f'Y1: {y1}, Y2: {y2}, Y3: {y3}')
 
-    print("A:", str(A))
-    print("B:", str(B))
-    print("C:", str(C))
+    g2 = (y2-y1)/(l2-l1)
+    g3 = (y3-y1)/(l3-l1)
+
+    print(f'G2: {g2}, G3: {g3}')
+
+    c = ((g3 - g2) / (l3 - l2)) * ((l1 + l2 + l3) ** -1)
+    b = g2 - (c * ((l1 ** 2) + (l1 * l2) + (l2 ** 2)))
+    a = y1 - ((b + ((l1 ** 2) * c)) * l1)
+
+    print("A:", str(a))
+    print("B:", str(b))
+    print("C:", str(c))
 
     voltageOut = voltageIn - ((adc * voltageIn) / 1024)
     print("Voltage:", str(voltageOut))
@@ -39,8 +45,8 @@ def temp_calc(adc):
     print("Resistance:", str(resistance), "for ADC:", str(adc))
 
     lnResistance = math.log1p(resistance)
-    temperatureKelvin = 1 / (A + (B * lnResistance) +
-                             (C * (lnResistance ** 3)))
+    temperatureKelvin = 1 / (a + (b * lnResistance) +
+                             (c * (lnResistance ** 3)))
     temperatureCelcius = temperatureKelvin - 273.15
     temperatureFarenheit = ((temperatureCelcius * 9) / 5) + 32
 
