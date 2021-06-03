@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>aspnet-MeatPi.Web-DB47E781-5526-4A8F-99CD-C83209633B1F</UserSecretsId>
+    <WebProject_DirectoryAccessLevelKey>0</WebProject_DirectoryAccessLevelKey>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AsyncEnumerator" Version="4.0.2" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.6.1" />
+    <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="2.0.0-preview" />
+    <PackageReference Include="Microsoft.Azure.Devices" Version="1.33.0" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="1.9.2" />
+    <PackageReference Include="Microsoft.Identity.Web.UI" Version="1.9.2" />
+  </ItemGroup>
+
+</Project>
