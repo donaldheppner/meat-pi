@@ -1,7 +1,8 @@
-﻿using Microsoft.Azure.Cosmos.Table;
-using System;
+﻿using System.Text.Json;
+using Microsoft.Azure.Cosmos.Table;
+using MeatPi.Common.Values;
 
-namespace MeatPi.Web.Tables
+namespace MeatPi.Common.Tables
 {
     public class ReadingTable : TableEntity
     {
@@ -25,5 +26,14 @@ namespace MeatPi.Web.Tables
 
         public static string CreatePartitionKey(string deviceId, string cookId) => string.Join("|", deviceId, cookId);
 
+        public static ReadingTable FromReading(CookReadingValue reading)
+        {
+            return new ReadingTable(reading.DeviceId, reading.CookId, reading.Time)
+            {
+                ChamberTarget = reading.ChamberTarget,
+                IsCookerOn = reading.IsCookerOn,
+                Readings = JsonSerializer.Serialize(reading.Readings)
+            };
+        }
     }
 }

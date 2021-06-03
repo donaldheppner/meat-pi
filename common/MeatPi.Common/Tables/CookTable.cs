@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos.Table;
+using MeatPi.Common.Values;
 
-namespace MeatPi.Web.Tables
+namespace MeatPi.Common.Tables
 {
     public class CookTable : TableEntity
     {
@@ -17,5 +18,14 @@ namespace MeatPi.Web.Tables
 
         public string StartTime { get; set; }
         public string LastTime { get; set; }
+
+        public static CookTable FromReading(CookReadingValue reading)
+        {
+            return new CookTable(reading.DeviceId, reading.CookId)
+            {
+                StartTime = reading.CookStartTime,
+                LastTime = reading.Time
+            };
+        }
     }
 }
