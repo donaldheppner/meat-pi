@@ -1,0 +1,32 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome To Meat Pi!</h1>
+
+    <hr />
+
+    <h1>Cooks</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Device</th>
+                <th scope="col">Start Time</th>
+                <th scope="col">Last Recorded Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cook in Model.Cooks)
+            {
+            <tr>
+                <td><a href="/Cook?pi=@cook.DeviceId&cook=@cook.CookId">@cook.DeviceId</a><br /><small>@cook.CookId</small></td>
+                <td><script>printDate('@cook.StartTime')</script></td>
+                <td><script>printDate('@cook.LastTime')</script></td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

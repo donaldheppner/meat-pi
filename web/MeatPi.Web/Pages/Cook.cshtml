@@ -1,0 +1,72 @@
+﻿@page
+@model MeatPi.Web.Pages.CookModel
+@{
+    ViewData["Title"] = $"Cook";
+}
+
+<div class="text-center">
+    <h1>
+        Cook Started:
+        <script>printDate('@Model.StartTime')</script>
+    </h1>
+    <p></p>
+    <h3>
+        Last Reading:
+        <script>printDate('@Model.LastReading')</script>
+    </h3>
+    <p></p>
+
+    <form method="post">
+        <input type="hidden" name="cook" value="@Model.CookId" />
+        <input type="hidden" name="pi" value="@Model.DeviceId" />
+        <fieldset>
+            <legend>Adjust Chamber Target</legend>
+            <div>
+                <label for="Target">Target (F):</label>
+                <input type="number" name="ChamberTarget" value="@Model.ChamberTarget" min="-300" max="450" />
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <input type="submit" value="Submit" class="submit" />
+            </div>
+        </fieldset>
+    </form>
+
+    <p>
+        @Model.ChamberTargetStatus
+    </p>
+
+
+    @if (Model.Readings.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Chamber</th>
+                    <th scope="col">Food #1</th>
+                    <th scope="col">Food #2</th>
+                    <th scope="col">Heating?</th>
+                    <th scope="col">Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Readings)
+                {
+                    <tr>
+                        <td>@r.Chamber°F</td>
+                        <td>@r.FoodOne°F</td>
+                        <td>@r.FoodTwo°F</td>
+                        <td>@r.IsCookerOn</td>
+                        <td>
+                            <script>printDate('@r.Time')</script>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+    <h2>No data for cook :(</h2>
+    }
+</div>
