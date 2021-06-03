@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Dasync.Collections;
 using Microsoft.Azure.Cosmos.Table;
 
-namespace MeatPi.Web
+namespace MeatPi.Common
 {
     public static class AzureTableHelper
     {

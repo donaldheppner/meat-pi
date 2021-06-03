@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Azure.Devices;
 using Microsoft.Extensions.Configuration;
+using MeatPi.Common;
 
 namespace MeatPi.Web.Pages
 {
