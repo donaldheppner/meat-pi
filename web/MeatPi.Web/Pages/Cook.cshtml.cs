@@ -136,7 +136,7 @@ namespace MeatPi.Web.Pages
                     }
 
                     await LoadData();
-                    ChamberTarget = KelvinsToFahrenheit(target.ToString("N2"));
+                    ChamberTarget = target.ToString("N2");
                 }
                 else
                 {
@@ -172,7 +172,7 @@ namespace MeatPi.Web.Pages
                     var rows = await AzureTableHelper.Query<ReadingTable>(ReadingTable.TableName, deviceCookCondition, lastTwoHoursCondition);
 
                     Readings.AddRange(rows.Select(r => Reading.FromTable(r)).OrderByDescending(r => r.Time));
-                    ChamberTarget = Readings.First().ChamberTarget.ToString("N2");
+                    ChamberTarget = KelvinsToFahrenheit(Readings.First().ChamberTarget).ToString("N2");
                 }
             }
         }
