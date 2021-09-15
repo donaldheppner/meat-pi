@@ -128,19 +128,19 @@ namespace MeatPi.Web.Pages
                     var response = await client.InvokeDeviceMethodAsync(DeviceId, methodInvocation);
                     if(response.Status == 200)
                     {
-                        ChamberTargetStatus = $"Chamber temperature set to: {target}°F";
+                        ChamberTargetStatus = $"Chamber temperature set to: {target}Â°F";
                     }
                     else if(response.Status == 400)
                     {
-                        ChamberTargetStatus = $"Chamber temperature invalid: {target}°F";
+                        ChamberTargetStatus = $"Chamber temperature invalid: {target}Â°F";
                     }
 
                     await LoadData();
-                    ChamberTarget = target.ToString("N2");
+                    ChamberTarget = KelvinsToFahrenheit(target.ToString("N2"));
                 }
                 else
                 {
-                    ChamberTargetStatus = "Chamber temperature cannot be set above 450°F";
+                    ChamberTargetStatus = "Chamber temperature cannot be set above 450Â°F";
                     await LoadData();
                 }
             }
